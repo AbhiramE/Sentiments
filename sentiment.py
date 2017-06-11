@@ -11,7 +11,7 @@ access_key = properties.access_token
 access_key_secret = properties.access_token_secret
 
 
-def search():
+def search(max_id=0):
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_key, access_key_secret)
 
@@ -20,21 +20,24 @@ def search():
     searchquery = '"demonetization" OR "demonetisation" OR #demonetization OR #demonetisation -"via NMApp" ' \
                   '-filter:retweets'
 
-    data = api.search(q=searchquery, count=100, lang='en', result_type='mixed')
-    data_all = list(data.values())[1]
-    print(data_all)
+    if max_id != 0:
+        datum = api.search(q=searchquery, count=100, lang='en', result_type='mixed', max_id=max_id)
+    else:
+        datum = api.search(q=searchquery, count=100, lang='en', result_type='mixed')
 
-    while len(data_all) <= 20000:
+    data_all = list(datum.values())[1]
+    last = data_all[-1]['id']
+
+    while len(data_all) <= 5000:
         print(len(data_all))
-        time.sleep(5)
-        last = data_all[-1]['id']
-        data = api.search(q=searchquery, count=100, lang='en', result_type='mixed', max_id=last)
-        data_all += list(data.values())[1][1:]
+        time.sleep(7)
+        datum = api.search(q=searchquery, count=100, lang='en', result_type='mixed', max_id=last)
+        data_all += list(datum.values())[1][1:]
 
-    return data_all
+    return data_all, last
 
 
-def get_sentiment(data):
+def get_sentiment(fileName, data):
     tweet = []
     number_favourites = []
     vader_compound = []
@@ -62,11 +65,22 @@ def get_sentiment(data):
     twitter_df = twitter_df[['Tweet', 'Favourites', 'Compound',
                              'Positive', 'Neutral', 'Negative']]
 
-    twitter_df.to_csv('Tweets.csv', sep=',', encoding='utf-8')
+    twitter_df.to_csv(fileName, sep=',', encoding='utf-8')
 
     return twitter_df
 
 
-data = search()
-get_sentiment(data)
+data, max_id = search()
+get_sentiment('Tweets1.csv', data=data)
 
+time.sleep(61)
+data, max_id = search(max_id)
+get_sentiment('Tweets2.csv', data=data)
+
+time.sleep(61)
+data, max_id = search(max_id)
+get_sentiment('Tweets3.csv', data=data)
+
+time.sleep(61)
+data, max_id = search(max_id)
+get_sentiment('Tweets4.csv', data=data)
